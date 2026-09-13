@@ -1,4 +1,4 @@
-# Python TDD Skills
+# Python TDD Skill
 
 A skill for doing test-driven development in Python.
 
