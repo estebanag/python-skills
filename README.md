@@ -2,7 +2,7 @@
 
 A skill for doing test-driven development in Python.
 
-This skills is designed to fit into the workflow established by [Matt Pocock's skills](https://github.com/mattpocock/skills):
+This skill is designed to fit into the workflow established by [Matt Pocock's skills](https://github.com/mattpocock/skills):
 
 ```text
 /grill-with-docs
