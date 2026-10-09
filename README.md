@@ -1,4 +1,4 @@
-# Python TDD Skill
+# Python Quality Skill
 
 A skill for doing test-driven development in Python.
 
@@ -11,15 +11,15 @@ This skill is designed to fit into the workflow established by [Matt Pocock's sk
     ↓
 /to-tickets
     ↓
-/python-tdd
+/python-quality
 ```
 
 ## Setup
 
-Before using `/python-tdd`, run:
+Before using `/python-quality`, run:
 
 ```text
-/setup-python-tdd
+/setup-python-quality
 ```
 
 ## Credits

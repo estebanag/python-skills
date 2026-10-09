@@ -1,9 +1,9 @@
 ---
-name: python-tdd
+name: python-quality
 description: Python-specific TDD implementation driver. Reads an issue, loads all listed Python references from the skill's own references/ directory, then drives a self-contained red-green-refactor loop using `uv run poe check` as the feedback step. Use when implementing an issue or any coding task in a Python project, or when the user says "implement this" or "work on issue" in a Python project.
 ---
 
-# Python TDD
+# Python Quality
 
 Implements a Python issue using test-driven development. Loads all listed Python references, then drives a red-green-refactor loop with `uv run poe check` as the feedback mechanism.
 
@@ -15,7 +15,7 @@ Do not run commands that change git state: no `git add`, `git commit`, `git rese
 
 ## Step 1 — Read the issue
 
-If invoked with an issue number (e.g. `/python-tdd 42`) or path to local `.scratch/` file with issue description:
+If invoked with an issue number (e.g. `/python-quality 42`) or path to local `.scratch/` file with issue description:
 - Read the issue from the configured issue tracker (GitHub Issues if configured, or local `.scratch/` files).
 - If no tracker is configured, ask the user to describe the issue inline.
 
