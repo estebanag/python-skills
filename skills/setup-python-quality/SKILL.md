@@ -1,9 +1,9 @@
 ---
-name: setup-python-tdd
-description: Bootstrap a Python project for TDD by updating pyproject.toml. Run once per project before using python-tdd.
+name: setup-python-quality
+description: Bootstrap a Python project for TDD by updating pyproject.toml. Run once per project before using python-quality.
 ---
 
-# Setup Python TDD
+# Setup Python Quality
 
 Bootstraps a Python project with standard TDD tooling by merging the required config into `pyproject.toml`.
 
