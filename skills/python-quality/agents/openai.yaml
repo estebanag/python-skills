@@ -1,0 +1,3 @@
+interface:
+  display_name: "Python TDD"
+  short_description: "Apply Python standards and quality gates"
