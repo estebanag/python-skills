@@ -1,11 +1,11 @@
 ---
 name: setup-python-quality
-description: Bootstrap a Python project for TDD by updating pyproject.toml. Run once per project before using python-quality.
+description: Set up a Python project's quality tooling and `uv run poe check` gate. Run once per project before using python-quality.
 ---
 
 # Setup Python Quality
 
-Bootstraps a Python project with standard TDD tooling by merging the required config into `pyproject.toml`.
+Bootstraps a Python project's quality tooling by merging the required config into `pyproject.toml`.
 
 ---
 
@@ -14,28 +14,16 @@ Bootstraps a Python project with standard TDD tooling by merging the required co
 Ask for the importable Python package name (snake_case, e.g. `my_library`) to fill in
 `<package_name>` before checking project files.
 
-Check whether `[tool.poe.tasks]`, `[tool.mypy]`, and `[tool.ruff]` all exist in `pyproject.toml`.
-Also check whether `src/<package_name>/py.typed` exists when `src/<package_name>/` exists.
+1. Read `pyproject.toml` and `assets/pyproject.standard.toml` in full; substitute `<package_name>` in the asset with the importable package name in memory.
+2. Compare all standard sections and keys with the project, including `tool.poe.tasks.check`, its referenced tasks, and the dependency groups needed to run them. Check whether `src/<package_name>/py.typed` exists when the package directory exists. Section presence alone does not establish that the gate is configured.
+3. List missing keys and any existing keys with different values side by side. Confirm additions with the user; for differing values, ask which to keep. Respect the project's existing configuration rather than silently replacing it.
+4. On confirmation, merge missing keys into `pyproject.toml`. Change an existing value only if the user explicitly chooses the standard value. If `src/<package_name>/` exists but lacks `py.typed`, ask before adding the empty marker.
+5. Recheck that `uv run poe check` is defined and that its referenced tasks and required tool dependencies are configured. If the user keeps a configuration that prevents the gate from running, report the blocker rather than declaring setup complete. If the package directory does not exist yet, remind the user to add `src/<package_name>/py.typed` when it is created.
 
-**If all three tool sections exist and `src/<package_name>/py.typed` exists:** tell the user the project is already configured and stop.
-
-**If all three tool sections exist but `src/<package_name>/` does not exist yet:** tell the user the tooling is configured, and remind them to add `src/<package_name>/py.typed` when the package directory is created.
-
-**If any tool section is missing or `py.typed` is missing from an existing package directory:**
-
-1. Read `pyproject.toml` in full.
-2. Read `assets/pyproject.standard.toml` in full and substitute `<package_name>` with the importable Python package name in memory.
-3. Compare `pyproject.toml` against the standard sections from the asset. Identify every key that is **absent** from the existing file.
-4. Show the user the list of missing sections and ask for confirmation before making any change:
-   > "The following standard sections are missing from `pyproject.toml`: [list]. May I add them?"
-5. If any key already exists with a **different value** from the standard, show both values side by side and ask the user which to keep before proceeding.
-6. On confirmation, **merge** the missing keys into `pyproject.toml` — never remove or overwrite any existing key.
-7. If `src/<package_name>/` exists and `src/<package_name>/py.typed` is missing, ask for confirmation and add an empty `py.typed` marker file.
-8. If `src/<package_name>/` does not exist yet, include a reminder in the final report to add `src/<package_name>/py.typed` when the package directory is created.
+If nothing needs changing and the gate is configured, tell the user the project is already configured.
 
 ---
 
 ## Step 2 — Sync dependencies
 
-After making changes, tell the user what was added or updated, including any `py.typed`
-marker action, and ask them to run `uv sync --group dev --group test` before continuing.
+After making changes, report what was added or updated, including any `py.typed` marker action. Derive the appropriate `uv sync` command from the project's actual dependency groups and ask the user to run it before continuing (for the standard asset's `dev` and `test` groups: `uv sync --group dev --group test`).

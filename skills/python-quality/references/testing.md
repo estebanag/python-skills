@@ -1,6 +1,6 @@
 # Testing
 
-pytest conventions for this project.
+Python testing conventions using pytest.
 
 ## Running tests
 
@@ -15,14 +15,11 @@ uv run pytest --pdb                    # drop into debugger on failure
 
 ## File naming
 
-Tests live in `tests/` (flat — no subdirectories).
-
-- One test file per source module: `src/mypackage/processor.py` → `tests/test_processor.py`
-- If a module has many test scenarios, add a feature qualifier: `tests/test_processor_validation.py`
+Follow the project's test layout. Name files for the public interface or behaviour under test. `tests/test_processor.py` is a useful default for a processor interface; use a qualifier such as `tests/test_processor_validation.py` when it makes a group of behaviours easier to find. A source module does not require its own test file.
 
 ## Function naming
 
-Format: `test_<verb>_<what>_<condition>`
+A useful pattern is `test_<verb>_<what>_<condition>`:
 
 ```python
 def test_process_items_returns_empty_on_empty_input(): ...
@@ -32,7 +29,7 @@ def test_validate_config_rejects_missing_required_key(): ...
 def test_parse_date_handles_iso_format(): ...
 ```
 
-The name should read as a specification sentence.
+Choose names that describe observable behaviour; use another pattern if it reads more clearly as a specification.
 
 ## Test structure: Arrange / Act / Assert
 
@@ -78,7 +75,7 @@ def test_process_items_returns_sorted_results(processor: Processor) -> None:
 **✅ Good tests:**
 - Test behaviour through the **public API** — not internal implementation.
 - Survive refactoring: renaming a private helper should not break any test.
-- Are **fast and isolated** — no network, no file system, no shared mutable state.
+- Are **fast and isolated** — no uncontrolled external services or shared mutable state. Controlled temporary files and test databases are appropriate when the behaviour requires them.
 - Are **readable as specifications**: the name and assertions tell you exactly what capability exists.
 
 **❌ Bad tests:**
@@ -110,6 +107,8 @@ def test_fetcher_retries_on_timeout() -> None:
     assert mock_get.call_count == 2
 ```
 
+Here the call count verifies the retry contract at an external I/O boundary. Do not assert on calls to internal collaborators.
+
 ## Parametrize
 
 Use `@pytest.mark.parametrize` to avoid copy-paste tests:
@@ -129,7 +128,7 @@ def test_shout_uppercases_input(input_val: str, expected: str) -> None:
 
 ## Async tests
 
-This project uses `pytest-asyncio` with `asyncio_mode = "auto"` (configured in `pyproject.toml`). Write async test functions as `async def` — no decorator needed:
+Write async tests with `async def`. With `pytest-asyncio`, mark them with `@pytest.mark.asyncio`; the marker is optional if `asyncio_mode = "auto"` is enabled in the project's `pyproject.toml` (or other pytest configuration). Follow the project's async test plugin if it uses another convention:
 
 ```python
 # tests/test_fetcher.py
@@ -139,6 +138,7 @@ import pytest
 
 from mypackage.fetcher import AsyncFetcher
 
+@pytest.mark.asyncio
 async def test_fetch_returns_content() -> None:
     fetcher = AsyncFetcher(base_url="https://example.com")
 
@@ -150,17 +150,20 @@ async def test_fetch_returns_content() -> None:
 
 ### Async fixtures
 
-Async fixtures work the same way — just make the fixture function `async def`:
+Use `async def` fixtures when the async test plugin supports them. With `pytest-asyncio`, use its fixture decorator (a plain `@pytest.fixture` also works when automatic async fixture discovery is enabled):
 
 ```python
 # tests/conftest.py
 from __future__ import annotations
 
-import pytest
+from collections.abc import AsyncIterator
+
+import pytest_asyncio
+
 from mypackage.client import AsyncClient
 
-@pytest.fixture
-async def client() -> AsyncClient:
+@pytest_asyncio.fixture
+async def client() -> AsyncIterator[AsyncClient]:
     """Return an async client for testing."""
     async with AsyncClient() as c:
         yield c
@@ -168,42 +171,33 @@ async def client() -> AsyncClient:
 
 ### Mocking async functions
 
-Use `AsyncMock` from `unittest.mock` when patching coroutines:
+Use `AsyncMock` from `unittest.mock` when replacing an async call to an external service. Assert on the public result rather than the internal sequence of calls:
 
 ```python
 from unittest.mock import AsyncMock, patch
 
-async def test_processor_calls_fetch() -> None:
-    with patch("mypackage.processor.fetch_data", new_callable=AsyncMock) as mock_fetch:
-        mock_fetch.return_value = {"status": "ok"}
+import httpx
+
+async def test_processor_returns_status_from_service() -> None:
+    with patch("mypackage.processor.httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = httpx.Response(
+            200,
+            json={"status": "ok"},
+            request=httpx.Request("GET", "https://example.com/status"),
+        )
         processor = Processor()
 
         result = await processor.run()
 
-    mock_fetch.assert_called_once()
     assert result["status"] == "ok"
 ```
 
 ## Test coverage
 
-Coverage runs automatically on every `pytest` invocation (via `addopts` in `pyproject.toml`). The project enforces a minimum of **80% branch coverage**.
+Check the project's `pyproject.toml` (or other test configuration) for whether coverage runs with pytest, its required threshold, branch coverage, and exclusions. For example, pytest's `addopts` may enable coverage automatically, and `[tool.coverage.run]` may enable branch coverage. Branch coverage detects untested conditional paths even when line coverage is complete. Where coverage tooling is available, a detailed report can help identify missing paths:
 
 ```bash
-uv run pytest                          # runs tests + coverage report
-uv run pytest --cov-report=html        # generate HTML report in htmlcov/
+uv run pytest --cov-report=html        # generate an HTML report when pytest-cov is configured
 ```
 
-**Branch coverage** (`branch = true` in `[tool.coverage.run]`) detects untested conditional branches — a function with an untested `else` block will fail coverage even at 100% line coverage.
-
-To mark genuinely untestable lines (e.g., defensive `raise NotImplementedError`):
-
-```python
-def abstract_method(self) -> str:
-    raise NotImplementedError  # pragma: no cover
-```
-
-The following patterns are excluded from coverage automatically (configured in `pyproject.toml`):
-- `pragma: no cover`
-- `if TYPE_CHECKING:`
-- `@overload`
-- `raise NotImplementedError`
+Mark genuinely untestable lines with `# pragma: no cover` only when the project's coverage configuration supports it, and explain why the line cannot be tested.

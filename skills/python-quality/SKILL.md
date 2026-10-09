@@ -1,186 +1,84 @@
 ---
 name: python-quality
-description: Python-specific TDD implementation driver. Reads an issue, loads all listed Python references from the skill's own references/ directory, then drives a self-contained red-green-refactor loop using `uv run poe check` as the feedback step. Use when implementing an issue or any coding task in a Python project, or when the user says "implement this" or "work on issue" in a Python project.
+description: Python quality standards and gates. Use when changing or integrating Python code, tests, dependencies, or tooling, or when conducting a code review.
 ---
 
-# Python Quality
+# Python Quality Profile
 
-Implements a Python issue using test-driven development. Loads all listed Python references, then drives a red-green-refactor loop with `uv run poe check` as the feedback mechanism.
+Apply this profile inside the active **host workflow**: the engineering skill that owns process and sequencing. This profile owns Python policy only. The host retains planning, TDD sequencing, git operations, subagents, review orchestration, reporting, and its own overall completion criteria.
 
-Prefer AFK execution: proceed without asking non-blocking questions, infer safe defaults from the issue/spec/codebase, and report decisions afterward. Stop only for genuinely blocking ambiguity or unsafe action.
+## Terms
 
-Do not run commands that change git state: no `git add`, `git commit`, `git reset`, `git checkout`, `git switch`, `git clean`, or similar. Use git only for read-only inspection (`git status`, `git diff`, `git diff --staged`, `git rev-parse`, `git log`).
+- **Gate**: the required verification checkpoint `uv run poe check`.
+- **Verified state**: repository files after a successful gate run, provided no repository files have changed since that run. Any later repository-file change invalidates it.
+- **Verified handoff**: handing a verified state back to the host workflow.
 
----
+## Authority
 
-## Step 1 — Read the issue
+Resolve decisions in this order:
 
-If invoked with an issue number (e.g. `/python-quality 42`) or path to local `.scratch/` file with issue description:
-- Read the issue from the configured issue tracker (GitHub Issues if configured, or local `.scratch/` files).
-- If no tracker is configured, ask the user to describe the issue inline.
+1. The host workflow owns process and sequencing.
+2. Repository tool configuration owns mechanical behavior.
+3. Repository standards and ADRs own project judgment and architecture.
+4. The selected references below supply Python judgment where the repository is silent.
+5. A contradiction in the above is **repository drift**; report it rather than choosing silently.
 
-If invoked without an argument, ask the user to describe what needs to be implemented.
+## Route references
 
----
+Before implementation or review, assess **every row** and read **every match**. Reference paths are relative to this skill's directory; resolve them to absolute paths before passing them to another agent.
 
-## Step 2 — Load references
+| Affected material or decision | Read |
+| --- | --- |
+| Python source, including style, annotations, strings, or imports | `references/python-style.md` |
+| Tests are affected, or the active `tdd` cycle requires a Python test | `references/testing.md` |
+| Generics, protocols, overloads, decorators, or advanced annotations | `references/advanced-typing.md` |
+| Public/private names, exports, warnings, deprecations, or compatibility | `references/visibility.md` |
+| Iteration, comprehensions, caching, pattern matching, or context managers | `references/idioms.md` |
+| Comments, docstrings, TODOs, or explanatory source prose | `references/comments.md` |
+| Equality, hashing, representations, containers, or data-model methods | `references/magic-methods.md` |
+| Creating, moving, splitting, or organizing modules | `references/file-organization.md` |
+| Package layout, imports, `__init__.py`, or package exports | `references/project-structure.md` |
+| Assertions, breakpoints, tracing, or temporary diagnostics | `references/debugging.md` |
+| Exceptions, validation failures, or exception chaining | `references/error-handling.md` |
+| Dataclasses, typed dictionaries, named tuples, or value objects | `references/data-structures.md` |
+| Classes, constructors, factories, properties, inheritance, or composition | `references/class-design.md` |
+| Pydantic v2 models, validators, settings, or serialization | `references/pydantic.md` |
+| Environment variables, configuration files, or application settings | `references/configuration.md` |
+| Filesystem paths or file operations | `references/pathlib.md` |
+| Threads, processes, locks, queues, or shared state | `references/concurrency.md` |
+| Coroutines, tasks, event loops, or async context managers | `references/async.md` |
+| Logging in application or library code | `references/logging.md` |
+| Untrusted input, sensitive data, subprocesses, deserialization, cryptographic randomness, or dependency hygiene | `references/security.md` |
+| NumPy arrays, dtypes, shapes, vectorization, or numerical APIs, when NumPy is present or being added as a runtime dependency or optional extra | `references/numpy-types.md` |
+| Matplotlib figures, axes, or plotting APIs, when Matplotlib is present or being added as a runtime dependency or optional extra | `references/plotting.md` |
 
-Read **all** of the following reference files from this skill's own `references/` directory before writing any code. Read them in order — `references/rules-digest.md` first:
+The security floor in `references/security.md` is not overridable. A conflict that would expose secrets or sensitive data, execute or deserialize untrusted input unsafely, or create an equivalent concrete vulnerability blocks the work.
 
-1. `references/rules-digest.md`
-2. `references/python-style.md`
-3. `references/advanced-typing.md`
-4. `references/visibility.md`
-5. `references/idioms.md`
-6. `references/comments.md`
-7. `references/magic-methods.md`
-8. `references/file-organization.md`
-9. `references/project-structure.md`
-10. `references/testing.md`
-11. `references/debugging.md`
-12. `references/error-handling.md`
-13. `references/data-structures.md`
-14. `references/class-design.md`
-15. `references/pydantic.md`
-16. `references/configuration.md`
-17. `references/pathlib.md`
-18. `references/concurrency.md`
-19. `references/async.md`
-20. `references/logging.md`
-21. `references/security.md`
-22. `references/numpy-types.md`
-23. `references/plotting.md`
+## Implementation mode
 
-Do not skip any file. Do not try to infer which ones apply — load all of them.
+Apply selected references while changing Python-relevant material. At the single implementation handoff:
 
----
+1. Inspect repository status and record repository-file status.
+2. Run `uv run poe check` from the repository root.
+3. Inspect status again. Gate-produced edits are implementation changes: retain, inspect, and include them in the diff.
+4. Fix agent-owned failures—code, tests, formatting, typing, and local configuration—and rerun the gate as needed.
+5. If dependencies are missing, derive the repository-appropriate `uv sync` command from its metadata, give that exact command to the user, and wait for confirmation. Treat infrastructure or external-service failures as blockers. If the `check` task is missing, direct the user to `/setup-python-quality`.
+6. Report the exact gate command, pass/fail status, and whether it changed files.
 
-## Step 3 — Plan
+Implementation mode completes with either a verified handoff or an explicitly reported blocker/unavailable gate; the host decides whether its workflow can complete.
 
-Before writing any code:
+## Integration mode
 
-- [ ] Check `CONTEXT.md` for domain vocabulary — use its terms in test names and interface design
-- [ ] Check `docs/adr/` for any decisions that constrain the area you're touching
-- [ ] Infer needed interface changes from the issue/spec, existing code, tests, `CONTEXT.md`, and ADRs
-- [ ] When designing new interfaces: prefer returning results over side effects, and accept dependencies rather than creating them internally
-- [ ] Infer which behaviours to test, prioritising the critical path
-- [ ] List the behaviours as a numbered sequence — observable behaviours, not implementation steps
-- [ ] Proceed without user approval unless there is a blocking ambiguity that would make implementation unsafe
+For mixed-language work, activate this profile when any Python source, tests, dependencies, or tooling changes. Apply references only to Python material, but run the complete repository-owned `uv run poe check`.
 
-Ask only when the issue/spec/codebase is insufficient to proceed safely. Otherwise, write down the inferred plan and continue.
+The host runs the gate on the integrated tree before code review, then after remediation or any other repository-file change. It may reuse the verified state after a read-only review when the tree stayed unchanged. Apply the same safety, failure, edit-inspection, and reporting contract as implementation mode.
 
----
+Integration mode completes when the integrated tree has a verified handoff, or when its blocker is explicit for the host to resolve.
 
-## Step 4 — Tracer bullet
+## Read-only code review mode
 
-Write ONE test that confirms ONE thing about the system:
+The code review host establishes a verified state before spawning reviewers when it can safely run the gate. A reviewer stays read-only and never runs the gate. If the repository is not in a verified state, continue the review and explicitly report the missing mechanical prerequisite.
 
-```
-RED:   Write test for first behaviour → run `uv run poe check` → confirm it fails
-GREEN: Write minimal code to pass → run `uv run poe check` → confirm it passes
-```
+Cite a selected reference for fallback findings. Skip tool-enforced findings only when the repository is in a verified state. Report repository drift and security-floor violations regardless of mechanical coverage.
 
-This is your tracer bullet — it proves the end-to-end path works.
-
----
-
-## Step 5 — Incremental loop
-
-**Anti-pattern: Horizontal Slices.** Do NOT write all tests first, then all implementation. This produces tests that verify imagined behaviour rather than actual behaviour, and you outrun your headlights before understanding the implementation.
-
-```
-WRONG (horizontal):
-  RED:   test1, test2, test3, test4, test5
-  GREEN: impl1, impl2, impl3, impl4, impl5
-
-RIGHT (vertical):
-  RED→GREEN: test1→impl1
-  RED→GREEN: test2→impl2
-  RED→GREEN: test3→impl3
-  ...
-```
-
-For each remaining behaviour:
-
-```
-RED:   Write next test → `uv run poe check` → confirm failure
-GREEN: Minimal code to pass → `uv run poe check` → confirm pass
-```
-
-Rules:
-- One test at a time
-- Only enough code to pass the current test
-- Do not anticipate future tests
-- Keep tests focused on observable behaviour through public interfaces
-- **Never refactor while RED**
-
-When `poe check` stops on a failure:
-1. Read the reported error
-2. Fix that one thing (a lint violation `--fix` could not auto-resolve, a type error, or a failing test)
-3. Run `uv run poe check` again
-4. Repeat until it passes cleanly
-
-Do not use `# type: ignore` to silence a type error unless it is a known mypy limitation — document why with a comment on the same line. If a test fails that you did not write, investigate before assuming it is pre-existing — you may have introduced a regression. Coverage must stay at or above 80%.
-
-**Per-cycle checklist:**
-```
-[ ] Test describes behaviour, not implementation
-[ ] Test uses public interface only
-[ ] Test would survive an internal refactor
-[ ] Code is minimal for this test
-[ ] No speculative features added
-```
-
----
-
-## Step 6 — Post-implementation review gate
-
-After all tests pass, always run a size-scaled review of the uncommitted diff before reporting done.
-
-Use git only for read-only inspection:
-
-- [ ] Inspect `git diff`
-- [ ] Inspect `git diff --staged` if staged changes exist
-- [ ] Do not stage, unstage, commit, reset, checkout, switch branches, or otherwise change git state
-
-Check the whole uncommitted diff for:
-
-- **Repo-documented standards** — find and follow any local standards such as `CODING_STANDARDS.md`, `CONTRIBUTING.md`, or equivalent. Documented repo standards override the smell baseline.
-- **Scope creep** — remove behaviour, abstractions, parameters, or hooks not requested by the issue/spec.
-- **Mysterious Name** — a function, variable, or type whose name doesn't reveal what it does or holds. → rename it; if no honest name comes, the design's murky.
-- **Duplicated Code** — the same logic shape appears in more than one hunk or file in the change. → extract the shared shape, call it from both.
-- **Feature Envy** — a method that reaches into another object's data more than its own. → move the method onto the data it envies.
-- **Data Clumps** — the same few fields or params keep travelling together (a type wanting to be born). → bundle them into one type, pass that.
-- **Primitive Obsession** — a primitive or string standing in for a domain concept that deserves its own type. → give the concept its own small type.
-- **Repeated Switches** — the same `switch`/`if`-cascade on the same type recurs across the change. → replace with polymorphism, or one map both sites share.
-- **Shotgun Surgery** — one logical change forces scattered edits across many files in the diff. → gather what changes together into one module.
-- **Divergent Change** — one file or module is edited for several unrelated reasons. → split so each module changes for one reason.
-- **Speculative Generality** — abstraction, parameters, or hooks added for needs the spec doesn't have. → delete it; inline back until a real need shows.
-- **Message Chains** — long `a.b().c().d()` navigation the caller shouldn't depend on. → hide the walk behind one method on the first object.
-- **Middle Man** — a class or function that mostly just delegates onward. → cut it, call the real target direct.
-- **Refused Bequest** — a subclass or implementer that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
-
-Resolution rules:
-
-- Fix hard blockers before completion: failing `uv run poe check`, repo-standard violations, implementation that contradicts requested behaviour, and clear unintended scope creep.
-- Automatically fix judgement-call smells when the refactor is obvious, local, and low-risk.
-- Leave broad, risky, or scope-expanding judgement calls as follow-up work in the final report instead of stopping for user input.
-- Do not optimise code unless you have measured that it is a bottleneck.
-- Consider what the new code reveals about existing code — refactor existing code too if needed and still within scope.
-- Run `uv run poe check` after each fix or refactor step.
-
----
-
-## Step 7 — Report
-
-Tell the user:
-- What you changed and why
-- Which tests cover the change (new or existing)
-- Any trade-offs or follow-up work needed
-- What the post-implementation review gate found, including any broad/risky judgement calls left as follow-up
-
----
-
-## Done criterion
-
-**The task is not done until `uv run poe check` passes cleanly** — no lint errors, no type errors, no failing tests, coverage at or above 80%.
+Read-only code review mode completes when every applicable selected reference has been assessed and the report states whether the repository was in a verified state. Remediation is implementation mode and returns a verified handoff.
