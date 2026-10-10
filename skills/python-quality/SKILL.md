@@ -77,7 +77,7 @@ Integration mode completes when the integrated tree has a verified handoff, or w
 
 ## Read-only code review mode
 
-The code review host establishes a verified state before spawning reviewers when it can safely run the gate. A reviewer stays read-only and never runs the gate. If the repository is not in a verified state, continue the review and explicitly report the missing mechanical prerequisite.
+The host establishes a verified state before code review when it can safely run the gate. Code review is read-only and does not run the gate. If the repository is not in a verified state, continue the review and explicitly report the missing mechanical prerequisite.
 
 Cite a selected reference for fallback findings. Skip tool-enforced findings only when the repository is in a verified state. Report repository drift and security-floor violations regardless of mechanical coverage.
 
