@@ -10,7 +10,7 @@ Run the one-time manual setup command in each repository:
 /setup-python-quality
 ```
 
-After setup, the `python-quality` skill activates automatically inside engineering workflows.
+After setup, call any applicable engineering skill together with `python-quality`.
 
 ## Credits
 
